@@ -6,8 +6,6 @@
 #include "level.h" // (symbol to word)
 #include "util.h" //
 #include <iostream>
-// Written by: Member 2 (except handleMoveCommand, which is Member 1's)
-
 // Removes one symbol from a room's list and moves the rest left (no gaps).
 //static= only this file can use this function
 // char roomlist is the item symbols available in the room
