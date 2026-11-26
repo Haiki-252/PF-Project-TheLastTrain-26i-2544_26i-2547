@@ -292,7 +292,6 @@ void runSimulation(int& playerFloor, int& playerRoom,
     energyLog = nullptr;
     timeLog = nullptr;
 }
-// handleMoveCommand  ->  Member 1 writes this function here
 // inspect: shows everything in the room and finds clue digits
 bool handleInspectCommand(int currentFloor, int currentRoom,
                           int& energy, int& time,
