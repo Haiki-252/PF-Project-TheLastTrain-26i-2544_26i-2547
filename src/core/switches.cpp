@@ -1,6 +1,39 @@
 #include "switches.h"
 #include "physics.h"
 #include "util.h"
+
+bool canUseLift1(int fromFloor, int toFloor)
+{
+    return ((fromFloor == 0 && toFloor == 1) || (fromFloor == 1 && toFloor == 0));
+}
+// Lift 1 connects only F1 and F2 so (0 to 1 or 1 to 0)
+bool canUseLift2(int fromFloor, int toFloor, bool lift2Operational, int emergencyTripsLeft)
+{
+    if (fromFloor == toFloor)
+    {
+        return false;
+    }
+
+    bool fromValid = (fromFloor == 1 || fromFloor == 3 || fromFloor == 4);
+    bool toValid   = (toFloor == 1 || toFloor == 3 || toFloor == 4);
+
+    if (!fromValid || !toValid)
+    {
+        return false;
+    }
+
+    return (lift2Operational || emergencyTripsLeft > 0);
+    // lift2Operational is true if the fuse is installed and the player has the lift pass.
+    // emergencyTripsLeft > 0 means the player has the emergency card.
+}
+
+bool unlockFloor3Door(const char inventory[MAX_INVENTORY_CAPACITY], int inventoryCount)
+//const char inventory: Passes the player's inventory array in read-only mode (const), so items are neither added nor removed.
+//inventoryCount tells the numebr of items present in inventory.
+{
+    return hasItem(inventory, inventoryCount, ENT_MASTER_KEY);
+    //calls function from physics.cpp and loops from 0 to inventoryCount - 1 looking for ENT_MASTER_KEY ('<').
+}
 // Puts the Fuse into the Control Panel.
 // Removes the Fuse from the bag, marks it installed and gives +20 points.
 // The player must already be in F3-R4 (handleUseCommand checks that).
