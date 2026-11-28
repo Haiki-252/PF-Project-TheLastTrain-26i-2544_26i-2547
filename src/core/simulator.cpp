@@ -292,6 +292,83 @@ void runSimulation(int& playerFloor, int& playerRoom,
     energyLog = nullptr;
     timeLog = nullptr;
 }
+bool handleMoveCommand(int targetFloor, int targetRoom,
+                       int& currentFloor, int& currentRoom,
+                       int& energy, int& time,
+                       const char horizontalConn[NUM_FLOORS][ROOMS_PER_FLOOR - 1],
+                       const char inventory[MAX_INVENTORY_CAPACITY], int inventoryCount,
+                       int& emergencyTripsLeft, bool lift2Operational)
+{
+    char connType = CONN_NONE;
+    // Check if the target room is directly connected to the current room
+    if (!isDirectlyConnected(currentFloor, currentRoom, targetFloor, targetRoom,
+                             horizontalConn, connType))
+    {
+        std::cout << "No direct way from F" << (currentFloor + 1) << "-R" << (currentRoom + 1)
+                  << " to F" << (targetFloor + 1) << "-R" << (targetRoom + 1) << ".\n";
+        return false;
+    }
+    //Check if the player is allowed to traverse that connection
+    if (!canTraverse(targetFloor, targetRoom, connType,
+                     inventory, inventoryCount, emergencyTripsLeft, lift2Operational))
+    {
+        if (connType == CONN_SOLID_WALL)
+        {
+            std::cout << "A solid wall blocks the way.\n";
+        }
+        else if (connType == CONN_LOCKED_DOOR)
+        {
+            std::cout << "The door is locked. You need the Master Key (<).\n";
+        }
+        else if (connType == '2')
+        {
+            std::cout << "Lift 2 is offline and you have no emergency trips left.\n";
+        }
+        else
+        {
+            std::cout << "You cannot go that way.\n";
+        }
+        return false;
+    }
+    // Determine movement cost: door/stairs (-2E, -1T), window (-3E, -2T), lift (-4E, -3T)
+    int deltaEnergy = 0;
+    int deltaTime = 0;
+    if (connType == CONN_DOOR || connType == CONN_LOCKED_DOOR || connType == 'S')
+    {
+        deltaEnergy = -2;
+        deltaTime = -1;
+        // amount of energy and time deducted for moving through a door or stairs
+    }
+    else if (connType == CONN_WINDOW)
+    {
+        deltaEnergy = -3;
+        deltaTime = -2;
+        // amount of energy and time deducted for moving through a window
+    }
+    else if (connType == '1' || connType == '2')
+    {
+        deltaEnergy = -4;
+        deltaTime = -3;
+        // amount of energy and time deducted for moving through a lift
+    }
+    applyResourceDelta(energy, time, deltaEnergy, deltaTime);
+    // Deduct energy and time
+    if (connType == '2' && !lift2Operational)
+    // 2 questions: Did u used lift 2? And if lift 2 operational? If not, then deduct one emergency trip
+    {
+        emergencyTripsLeft--;
+        std::cout << "Emergency trip used! Trips remaining: " << emergencyTripsLeft << "\n";
+    }
+    // 6. Update player position (add 1 only when printing)
+    currentFloor = targetFloor;
+    // old floor number is replaced with the new floor number
+    currentRoom = targetRoom;
+    // old room number is replaced with the new room number
+    std::cout << "Moved to F" << (currentFloor + 1) << "-R" << (currentRoom + 1)
+              << " (" << deltaEnergy << " Energy, " << deltaTime << " Time)\n";
+    return true;
+    //Tells the game, "Yep, the move worked!" so the game knows to save this step to your log and check if you ran out of time or energy.
+}
 // inspect: shows everything in the room and finds clue digits
 bool handleInspectCommand(int currentFloor, int currentRoom,
                           int& energy, int& time,
