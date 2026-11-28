@@ -2,6 +2,7 @@
 #include "level.h"
 #include "logger.h"
 #include "viewer_iface.h"
+#include "util.h"
 #include <iostream>
 
 int main() {
@@ -29,6 +30,7 @@ int main() {
 
     if (!loadBuildingMap(mapFile, horizontalConn, roomEntities, entityCounts)) {
         std::cerr << "Error: Could not load " << mapFile << "\n";
+        // std::cerr is specifically meant for error messages and prints immediately without waiting in a buffer.
         return 1;
     }
 
@@ -41,7 +43,43 @@ int main() {
     std::cout << "===========================================\n";
     std::cout << " THE LAST TRAIN - SIMULATION INITIALIZED   \n";
     std::cout << "===========================================\n";
-
+    //Ask the player for a valid starting room (e.g F1-R1)
+    char startInput[MAX_LINE_LEN];
+    while (true)
+    {
+        std::cout << "Enter starting room (e.g. F1-R1) or press Enter for default F"<< (playerFloor + 1) << "-R" << (playerRoom + 1) << ": ";
+        if (!std::cin.getline(startInput, MAX_LINE_LEN))
+        {
+            break; // Valid starting room entered
+        }
+        trimWhitespace(startInput);
+        if (startInput[0] == '\0')
+        {
+            if (isValidStartingRoom(playerFloor, playerRoom, horizontalConn))
+            {
+                break; // Default starting room is valid
+            }
+            else
+            {
+                std::cout << "Default starting room F" << (playerFloor + 1) << "-R" << (playerRoom + 1) << " is invalid. Please enter a valid starting room.\n";
+                continue;
+            }
+        }
+        int chosenFloor = 0;
+        int chosenRoom = 0;
+        if (!parseRoomId(startInput, chosenFloor, chosenRoom)) 
+        {
+            std::cout << "Invalid starting room. Please enter a valid room from F1-R1 to F5-R4.\n";
+            continue;
+        }
+        if (!isValidStartingRoom(chosenFloor, chosenRoom, horizontalConn)) {
+            std::cout << "F" << (chosenFloor + 1) << "-R" << (chosenRoom + 1)<< " cannot reach all mission goals. Try another room.\n";
+            continue;
+        }
+        playerFloor = chosenFloor;
+        playerRoom = chosenRoom;
+        break;
+    }
     runSimulation(playerFloor, playerRoom, energy, time, score,
                   inventory, inventoryCount, objectives, emergencyTripsLeft,
                   horizontalConn, roomEntities, entityCounts);
